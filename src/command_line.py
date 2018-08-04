@@ -6,7 +6,7 @@ OPTIMIZE_COMMAND_LINE = [
     ['-l', 'league ex: NFL, MLB', 'MLB'],
     ['-g', 'game number ex NFL Week 7 is the game number', 0],
     ['-y', 'league year', 2018],
-    ['-cl', 'commit lineup to db.', False],
+    ['-commit', 'commit lineup to db.', False],
     ['-env', 'What environment to save to?', 'dev']
     # ['-game', 'game to play', 'draftkings'],
     # ['-w', 'current week', None],
