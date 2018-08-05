@@ -55,9 +55,11 @@ class lineup(Base):
     def run_init_calc(self):
         self.salary = sum(p.salary for p in self.players)
         self.projected = sum(p.projected for p in self.players)
-
-        for p in self.players:
-            p.value = round(p.projected / p.salary * 1000.0, 2)
+    
+    def run_results_calc(self):
+        self.actual = sum(p.actual for p in self.players)
+        self.is_winner = self.actual > float(self.cash_line)
+        self.num_of_zero = len([p for p in self.players if p.actual == 0.0])    
 
     def __repr__(self):
         table_data = []
@@ -66,9 +68,14 @@ class lineup(Base):
             'Player',
             'Team',            
             'Salary',
-            'Projection',
-            'Value'        
+            'Projection'
         ]
+
+        if(self.actual > 0):
+            headers.append('Actual')
+        else:
+            headers.append('Value')
+            
         table_data.append(headers)
         self.players.sort(key=lambda p: p.salary, reverse=True)
 
@@ -79,7 +86,7 @@ class lineup(Base):
                 x.team,
                 x.salary,
                 x.projected,
-                x.value
+                x.actual if self.actual > 0 else x.get_value()                
             ])        
 
         table = AsciiTable(table_data).table
@@ -87,6 +94,8 @@ class lineup(Base):
         aggregate_info = '\nProjected Score: {} \t Cost: ${}'.format(
             str(self.projected),
             str(self.salary))
+        
+        aggregate_info += '\nActual Score: {} \t Winner: {}'.format(str(self.actual), self.is_winner)
 
         source = '\nProjection Source: {} \t Solution: {}'.format(self.projection_source, self.solution_index)
 
@@ -134,6 +143,9 @@ class player(Base):
     
     def solver_id(self):
         return '{} {} {}'.format(self.name, self.position, self.team)
+
+    def get_value(self):
+        return round(self.projected / self.salary * 1000.0, 2)
 
 def gen_player(pos, row):
     return player(
