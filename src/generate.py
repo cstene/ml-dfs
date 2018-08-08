@@ -1,6 +1,7 @@
 import csv
 import os.path
 import constants as c
+import datetime
 
 from command_line import get_args
 from sqlalchemy import create_engine
@@ -29,7 +30,7 @@ def retrieve_players_with_salaries():
 def apply_projections(all_players, file_name):
     print('Apply projections from file {}'.format(file_name))
 
-    full_file_path = c.DIRPATHS['projections'] + "/" + file_name
+    full_file_path = c.DIRPATHS['projections'] + file_name
     with open(full_file_path, 'rb') as csv_file:
         csv_data = csv.DictReader(csv_file)
 
@@ -141,6 +142,29 @@ def clean_lineups():
         session.delete(cl)
     session.commit()
 
+def rename_file(old, new):
+    if(os.path.isfile(new)):
+        os.remove(new)
+
+    os.rename(old, new)
+
+def clean_files():
+    print('Moving salaries and projections to history.')
+    #create history folder 
+    date_str = datetime.datetime.today()
+    dir_name = "g{} {}-{}-{}".format(args.g, date_str.month, date_str.day, date_str.year) + '/'
+    dir_path = c.DIRPATHS['history'] + dir_name
+    proj_path = dir_path + 'projections/'
+
+    if not os.path.exists(proj_path):
+        os.makedirs(proj_path)
+   
+    #move salaries    
+    rename_file(c.FILEPATHS['salaries'], dir_path + 'current-salaries.csv')
+    
+    #move projections
+    for i, file_name in enumerate(os.listdir(c.DIRPATHS['projections'])):
+        rename_file(c.DIRPATHS['projections'] + file_name, proj_path + file_name)
 
 if __name__ == '__main__':
     args = get_args()  
@@ -154,7 +178,7 @@ if __name__ == '__main__':
         init_db()
         clean_lineups()
     else:
-        print('Nothing will be saved to database.')
+        print('Nothing will be saved to database. Files will not be cleaned up.')
 
 
     all_players = retrieve_players_with_salaries()
@@ -188,11 +212,13 @@ if __name__ == '__main__':
             print("No solution found for {} bro.".format(source))
     
     if(args.commit):
-        print('Saving LUs')
+        print('Saving LUs.')
         session.add_all(lups)
         session.commit()
+        clean_files()
             
     for l in sorted(lups, key=lambda ls: ls.projected, reverse=True):
         print l   
 
 print('Complete.')
+

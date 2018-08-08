@@ -8,7 +8,8 @@ FILEPATHS = {
 }
 
 DIRPATHS = {
-    'projections' : base_path + "/data/projections"
+    'projections' : base_path + "/data/projections/",
+    'history' : base_path + "/history/"
 }
 
 DB = {
