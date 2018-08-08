@@ -1,5 +1,7 @@
 import os.path
 import csv
+import datetime
+from helper.file_helper import rename_file
 from command_line import get_args
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -47,6 +49,20 @@ def pre_req_check():
         msg = 'Plese indicate the cash_line points.'
         raise Exception(msg)
 
+def clean_files():
+    print('Moving results to history.')
+    #create history folder 
+    date_str = datetime.datetime.today() - datetime.timedelta(days=1)
+    dir_name = "g{} {}-{}-{}".format(args.g, date_str.month, date_str.day, date_str.year) + '/'
+    dir_path = c.DIRPATHS['history'] + dir_name
+    proj_path = dir_path + 'projections/'
+
+    if not os.path.exists(proj_path):
+        raise Exception("History path not found. Please resolve manually")
+   
+    #move salaries    
+    rename_file(c.FILEPATHS['results'], dir_path + 'results.csv')
+    
 if __name__ == '__main__':
     args = get_args() 
     pre_req_check()
@@ -73,6 +89,7 @@ if __name__ == '__main__':
     if(args.commit):
         print("Saving results")
         session.commit()
+        clean_files()
     else:
         print("Results were NOT saved.")
 

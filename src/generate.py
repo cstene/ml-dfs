@@ -9,6 +9,7 @@ from models.orm import lineup, player, gen_player, Base
 from sqlalchemy.orm import sessionmaker
 from csv_parse import mlb_upload
 from ortools.linear_solver import pywraplp
+from helper.file_helper import rename_file
 
 args = None
 engine = None
@@ -141,12 +142,6 @@ def clean_lineups():
     for cl in current_lus:
         session.delete(cl)
     session.commit()
-
-def rename_file(old, new):
-    if(os.path.isfile(new)):
-        os.remove(new)
-
-    os.rename(old, new)
 
 def clean_files():
     print('Moving salaries and projections to history.')
