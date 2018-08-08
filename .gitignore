@@ -4,3 +4,4 @@
 .vscode/
 lab/
 *.db
+*.db-journal

@@ -45,14 +45,15 @@ def apply_projections(all_players, file_name):
             matching_players = filter(name_match(row), all_players)
 
             if len(matching_players) == 0:
+                print('Projection not applied for player {}'.format(row['playername']))
                 continue
 
             for p in matching_players:
                 p.projected = float(row['points'])
                   
     
-    missing_projections = [p for p in all_players if p.projected == 0.0]
-    with_projections = [p for p in all_players if p.projected > 0.0]
+    missing_projections = [p for p in all_players if p.projected == 0.0 or p.salary < 1]
+    with_projections = [p for p in all_players if p.projected > 0.0 and p.salary > 0]
     print('Total Players missing projections: {}'.format(len(missing_projections)))
     print('Total Players with projections: {}'.format(len(with_projections)))
     return with_projections

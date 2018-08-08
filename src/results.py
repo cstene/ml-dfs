@@ -57,7 +57,7 @@ if __name__ == '__main__':
 
     current_lus = session.query(lineup).filter_by(league=args.l, league_year=args.y, league_game=int(args.g))
     for cl in current_lus:
-        cl.cash_line = args.clp
+        cl.cash_line = float(args.clp)
         for p in cl.players:
             if(p.name in results):
                 p.actual = float(results[p.name])
