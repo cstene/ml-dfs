@@ -2,7 +2,7 @@ import csv
 import os.path
 import constants as c
 import datetime
-import urllib2
+import urllib2, urllib
 
 from command_line import get_args
 from bs4 import BeautifulSoup
@@ -27,6 +27,20 @@ if __name__ == '__main__':
     args = get_args()
 
     fetch_rg()
+
+    # url = "https://www.fangraphs.com/dailyprojections.aspx"
+    # data = urllib.urlencode({'pos':'all', 'stats':'bat', 'type':'sabersim'})
+    # req = urllib2.Request(url, data)
+    # response = urllib2.urlopen(req)
+
+    # with open(c.DIRPATHS['projections'] + 'test.csv', 'wb') as local_file:                
+    #     rdr = csv.reader(response)
+    #     wtr = csv.writer(local_file)
+    #     wtr.writerow(["playername", "points"])
+    #     for r in rdr:
+    #         wtr.writerow([r[0], r[18]])
+    
+
 
     print('Complete')
 
