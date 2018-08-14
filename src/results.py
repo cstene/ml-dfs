@@ -6,6 +6,7 @@ from command_line import get_args
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from models.orm import lineup, player, gen_player, Base
+from models.name_resolver import resolve_name
 
 import constants as c
 
@@ -16,7 +17,7 @@ def load_results():
         csv_data = csv.DictReader(csv_file)
 
         for row in csv_data:
-            player_results[row['Player']] = row['Fpts']         
+            player_results[resolve_name(row['Player'])] = row['Fpts']         
 
     print('Player count: {}'.format(len(player_results)))
     return player_results

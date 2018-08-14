@@ -10,6 +10,7 @@ from sqlalchemy.orm import sessionmaker
 from csv_parse import mlb_upload
 from ortools.linear_solver import pywraplp
 from helper.file_helper import rename_file
+from models.name_resolver import resolve_name
 
 args = None
 engine = None
@@ -40,7 +41,7 @@ def apply_projections(all_players, file_name):
             def match_fn(p):
                 if p.position == 'DST':
                     return p.name.strip() in row['playername']
-                return p.name in row['playername']
+                return p.name in resolve_name(row['playername'])
             return match_fn
 
         for row in csv_data:
