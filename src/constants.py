@@ -3,8 +3,9 @@ import os.path
 base_path = os.path.dirname(os.path.abspath(__file__))
 FILEPATHS = {
     'salaries' : base_path + "/data/current-salaries.csv",
-    'template' : base_path + "/data/template.csv",
-    'results' : base_path + "/data/results.csv"
+    'lu_upload' : base_path + "/data/lu_upload.csv",
+    'results' : base_path + "/data/results.csv",
+    
 }
 
 DIRPATHS = {

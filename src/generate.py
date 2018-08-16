@@ -16,6 +16,7 @@ args = None
 engine = None
 session = None
 
+
 def retrieve_players_with_salaries():
     print('Retrieve players with salaries')
     all_players = []
@@ -28,6 +29,7 @@ def retrieve_players_with_salaries():
 
     print('Player count: {}'.format(len(all_players)))
     return all_players
+
 
 def apply_projections(all_players, file_name):
     print('Apply projections from file {}'.format(file_name))
@@ -48,18 +50,21 @@ def apply_projections(all_players, file_name):
             matching_players = filter(name_match(row), all_players)
 
             if len(matching_players) == 0:
-                print('Projection not applied for player {}'.format(row['playername']))
+                print('Projection not applied for player {}'.format(
+                    row['playername']))
                 continue
 
             for p in matching_players:
                 p.projected = float(row['points'])
-                  
-    
-    missing_projections = [p for p in all_players if p.projected == 0.0 or p.salary < 1]
-    with_projections = [p for p in all_players if p.projected > 0.0 and p.salary > 0]
+
+    missing_projections = [
+        p for p in all_players if p.projected == 0.0 or p.salary < 1]
+    with_projections = [
+        p for p in all_players if p.projected > 0.0 and p.salary > 0]
     print('Total Players missing projections: {}'.format(len(missing_projections)))
     print('Total Players with projections: {}'.format(len(with_projections)))
     return with_projections
+
 
 def run_solver(solver, players):
     print('Running solver...')
@@ -72,7 +77,7 @@ def run_solver(solver, players):
     objective.SetMaximization()
 
     # optimize on projected points
-    for i, p in enumerate(players):        
+    for i, p in enumerate(players):
         objective.SetCoefficient(variables[i], p.projected)
 
     # set multi-player constraint
@@ -82,8 +87,8 @@ def run_solver(solver, players):
             continue
 
         if p.name not in multi_caps:
-            multi_caps[p.name] = solver.Constraint(0, 1)               
-            
+            multi_caps[p.name] = solver.Constraint(0, 1)
+
         multi_caps[p.name].SetCoefficient(variables[i], 1)
 
     # set salary cap constraint
@@ -102,7 +107,7 @@ def run_solver(solver, players):
 
     for variable in variables:
         size_cap.SetCoefficient(variable, 1)
-    
+
      # set position limit constraint
     for position, min_limit, max_limit \
             in c.POSITIONS['MLB']:
@@ -114,10 +119,10 @@ def run_solver(solver, players):
 
     return variables, solver.Solve()
 
+
 def pre_req_check():
     print('Check pre reqs...')
     preReqs = [
-        c.FILEPATHS['template'],
         c.FILEPATHS['salaries']
     ]
 
@@ -130,6 +135,7 @@ def pre_req_check():
                  -l is {} -y is {}'''.format(args.l, args.y)
         raise Exception(msg)
 
+
 def init_db():
     global engine
     global session
@@ -138,36 +144,66 @@ def init_db():
     Session = sessionmaker(bind=engine)
     session = Session()
 
+
 def clean_lineups():
-    current_lus = session.query(lineup).filter_by(league=args.l, league_year=args.y, league_game=int(args.g))
+    current_lus = session.query(lineup).filter_by(
+        league=args.l, league_year=args.y, league_game=int(args.g))
     for cl in current_lus:
         session.delete(cl)
     session.commit()
 
+
 def clean_files():
     print('Moving salaries and projections to history.')
-    #create history folder 
+    # create history folder
     date_str = datetime.datetime.today()
-    dir_name = "g{} {}-{}-{}".format(args.g, date_str.month, date_str.day, date_str.year) + '/'
+    dir_name = "g{} {}-{}-{}".format(args.g, date_str.month,
+                                     date_str.day, date_str.year) + '/'
     dir_path = c.DIRPATHS['history'] + dir_name
     proj_path = dir_path + 'projections/'
 
     if not os.path.exists(proj_path):
         os.makedirs(proj_path)
-   
-    #move salaries    
+
+    # move salaries
     rename_file(c.FILEPATHS['salaries'], dir_path + 'current-salaries.csv')
-    
-    #move projections
+
+    # move projections
     for i, file_name in enumerate(os.listdir(c.DIRPATHS['projections'])):
-        rename_file(c.DIRPATHS['projections'] + file_name, proj_path + file_name)
+        rename_file(c.DIRPATHS['projections'] +
+                    file_name, proj_path + file_name)
+
+
+def create_dk_upload(lups):
+    print('Create lu_upload for DK.')
+    with open(c.FILEPATHS['lu_upload'], 'wb') as lu_upload:
+        lu_upload_writer = csv.writer(lu_upload)
+        lu_upload_writer.writerow(
+            [
+                'P',
+                'P',
+                'C',
+                '1B',
+                '2B',
+                '3B',
+                'SS',
+                'OF',
+                'OF',
+                'OF',
+            ])
+
+        for lu in lups:
+            sorted_players = lu.sorted_players()
+            lu_upload_writer.writerow([
+                p.player_id for p in sorted_players
+            ])
 
 if __name__ == '__main__':
     args = get_args()  
 
     pre_req_check()
 
-    #Do we need a database?
+    # Do we need a database?
     engine = None
     session = None
     if(args.commit):        
@@ -186,15 +222,15 @@ if __name__ == '__main__':
             'FD',
             pywraplp.Solver.CBC_MIXED_INTEGER_PROGRAMMING
         )   
-        #map to players
+        # map to players
         players_with_projections = apply_projections(all_players, proj_file)        
 
-        #find optimized solution
+        # find optimized solution
         variables, solution = run_solver(solver, players_with_projections)
 
         if solution == solver.OPTIMAL:            
             print("We have a solution for {} projections".format(source))
-            #need to update index when we have multi solutions per projections, set to 0 for now
+            # need to update index when we have multi solutions per projections, set to 0 for now
             lu = lineup(args.l,args.y,args.g,source,0)
 
             for j, player in enumerate(players_with_projections):
@@ -211,7 +247,8 @@ if __name__ == '__main__':
         print('Saving LUs.')
         session.add_all(lups)
         session.commit()
-        clean_files()
+        create_dk_upload(lups)
+        clean_files()        
             
     for l in sorted(lups, key=lambda ls: ls.projected, reverse=True):
         print l   
