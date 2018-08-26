@@ -16,7 +16,6 @@ args = None
 engine = None
 session = None
 
-
 def retrieve_players_with_salaries():
     print('Retrieve players with salaries')
     all_players = []
