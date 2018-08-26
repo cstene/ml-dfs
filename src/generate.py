@@ -37,6 +37,7 @@ def apply_projections(all_players, file_name):
     full_file_path = c.DIRPATHS['projections'] + file_name
     with open(full_file_path, 'rb') as csv_file:
         csv_data = csv.DictReader(csv_file)
+        player_not_found = []
 
         # hack for weird defensive formatting
         def name_match(row):
@@ -50,12 +51,15 @@ def apply_projections(all_players, file_name):
             matching_players = filter(name_match(row), all_players)
 
             if len(matching_players) == 0:
-                print('Projection not applied for player {}'.format(
-                    row['playername']))
+                player_not_found.append(row)                
                 continue
 
             for p in matching_players:
                 p.projected = float(row['points'])
+
+    player_not_found.sort(key=lambda pl: pl['team'])
+    for pl in player_not_found:
+         print('Projection not applied for player {} {}'.format(pl['team'], pl['playername']))
 
     missing_projections = [
         p for p in all_players if p.projected == 0.0 or p.salary < 1]

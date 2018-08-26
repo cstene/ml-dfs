@@ -14,12 +14,12 @@ def fetch_rg():
     
     with open(c.DIRPATHS['projections'] + 'rg_MLB_projection.csv', 'wb') as proj_file:
         proj_writer = csv.writer(proj_file)
-        proj_writer.writerow(["playername", "points"])
+        proj_writer.writerow(["playername", "points", "team"])
 
         for url in urls:
             reader = csv.reader(urllib2.urlopen(url))
             for row in reader:
-                proj_writer.writerow([row[0], row[7]])
+                proj_writer.writerow([row[0], row[7], row[2]])
 
 
 if __name__ == '__main__':
