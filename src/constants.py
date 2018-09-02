@@ -17,14 +17,3 @@ DB = {
     'dfs': "sqlite:///{}/data/dfs-".format(base_path)
 }
 
-POSITIONS = {
-    'MLB' : [
-        ['SP', 2, 2],
-        ['C', 1, 1],
-        ['1B', 1, 1],
-        ['2B', 1, 1],
-        ['3B', 1, 1],
-        ['SS', 1, 1],
-        ['OF', 3, 3],
-    ]
-}

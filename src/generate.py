@@ -2,6 +2,7 @@ import csv
 import os.path
 import constants as c
 import datetime
+import models.constraint_defs as constraint_defs
 
 from command_line import get_args
 from sqlalchemy import create_engine
@@ -104,8 +105,8 @@ def run_solver(solver, players):
 
     # set roster size constraint
     size_cap = solver.Constraint(
-        10,
-        10
+        constraint_def.num_of_players,
+        constraint_def.num_of_players
     )
 
     for variable in variables:
@@ -113,7 +114,7 @@ def run_solver(solver, players):
 
      # set position limit constraint
     for position, min_limit, max_limit \
-            in c.POSITIONS['MLB']:
+            in constraint_def.pos_def:
         position_cap = solver.Constraint(min_limit, max_limit)
 
         for i, player in enumerate(players):
@@ -177,23 +178,11 @@ def clean_files():
                     file_name, proj_path + file_name)
 
 
-def create_dk_upload(lups):
+def create_dk_upload(lups, pos_order):
     print('Create lu_upload for DK.')
     with open(c.FILEPATHS['lu_upload'], 'wb') as lu_upload:
         lu_upload_writer = csv.writer(lu_upload)
-        lu_upload_writer.writerow(
-            [
-                'P',
-                'P',
-                'C',
-                '1B',
-                '2B',
-                '3B',
-                'SS',
-                'OF',
-                'OF',
-                'OF',
-            ])
+        lu_upload_writer.writerow(pos_order)
 
         for lu in lups:
             sorted_players = lu.sorted_players()
@@ -209,6 +198,7 @@ if __name__ == '__main__':
     # Do we need a database?
     engine = None
     session = None
+    
     if(args.commit):        
         init_db()
         clean_lineups()
@@ -219,8 +209,11 @@ if __name__ == '__main__':
     all_players = retrieve_players_with_salaries()
 
     lups = []
+    constraint_def = None
     for i, proj_file in enumerate(os.listdir(c.DIRPATHS['projections'])):        
-        source = proj_file.split('_')[0]
+        info = proj_file.split('_')
+        source = info[0]
+        constraint_def = constraint_defs.set_constraints(info[1])
         solver = pywraplp.Solver(
             'FD',
             pywraplp.Solver.CBC_MIXED_INTEGER_PROGRAMMING
@@ -234,7 +227,7 @@ if __name__ == '__main__':
         if solution == solver.OPTIMAL:            
             print("We have a solution for {} projections".format(source))
             # need to update index when we have multi solutions per projections, set to 0 for now
-            lu = lineup(args.l,args.y,args.g,source,0)
+            lu = lineup(info[1],args.y,args.g,source,0,constraint_def.sort_func)
 
             for j, player in enumerate(players_with_projections):
                 if variables[j].solution_value() == 1:                    
@@ -250,8 +243,8 @@ if __name__ == '__main__':
         print('Saving LUs.')
         session.add_all(lups)
         session.commit()
-        create_dk_upload(lups)
-        clean_files()        
+        create_dk_upload(lups, constraint_def.export_order)
+        #clean_files()        
             
     for l in sorted(lups, key=lambda ls: ls.projected, reverse=True):
         print l   

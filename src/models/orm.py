@@ -15,6 +15,7 @@ lineup_player_association = Table('lineup_player_association', Base.metadata,
 class lineup(Base):
     __tablename__ = 'lineup'
 
+    #Columns
     id = Column(Integer, Sequence('lineup_id_seq'), primary_key=True)
     league = Column(String(10))
     league_year = Column(Integer)
@@ -29,6 +30,10 @@ class lineup(Base):
     num_of_zero = Column(Integer)
     players = relationship("player", secondary=lineup_player_association,
                            back_populates="lineups", cascade="all,delete")
+    
+    #Props
+    sort_order = {}
+    sort_func = None
 
     def __init__(
         self,
@@ -37,6 +42,7 @@ class lineup(Base):
         league_game,
         projection_source,
         solution_index,
+        sort_func,
         projected=0.0,
         salary=0,
         actual=0.0,
@@ -49,6 +55,7 @@ class lineup(Base):
         self.league_game = league_game
         self.projected = projected
         self.salary = salary
+        self.sort_func = sort_func
         self.projection_source = projection_source
         self.solution_index = solution_index
         self.actual = actual
@@ -66,20 +73,11 @@ class lineup(Base):
         self.num_of_zero = len([p for p in self.players if p.actual == 0.0])
 
     def sorted_players(self):
-        return sorted(
-            self.players,
-            key=lambda p: {
-                'P': 0,
-                'SP': 0,
-                'C': 1,
-                '1B': 2,
-                '2B': 3,
-                '3B': 4,
-                'SS': 5,
-                'OF': 6,
-                'RP': 7,
-            }[p.position]
-        )
+        return self.sort_func(self.players)
+        # return sorted(
+        #     self.players,
+        #     key=lambda p: self.sort_order[p.position]
+        # )
 
     def __repr__(self):
         table_data = []
