@@ -7,6 +7,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from models.orm import lineup, player, gen_player, Base
 from models.name_resolver import resolve_name
+import models.constraint_defs as constraint_defs
 
 import constants as c
 
@@ -72,9 +73,11 @@ if __name__ == '__main__':
 
     results = load_results()
 
+    constraint_def = constraint_defs.set_constraints(args.l)
+
     current_lus = session.query(lineup).filter_by(league=args.l, league_year=args.y, league_game=int(args.g))
     for cl in current_lus:
-        cl.cash_line = float(args.clp)
+        cl.cash_line = float(args.clp)        
         for p in cl.players:
             if(p.name in results):
                 p.actual = float(results[p.name])
@@ -85,6 +88,7 @@ if __name__ == '__main__':
         cl.run_results_calc()
     
     for l in sorted(current_lus, key=lambda ls: ls.actual, reverse=True):
+        l.sort_func = constraint_def.sort_func
         print l
 
     if(args.commit):
