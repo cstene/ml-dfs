@@ -244,7 +244,7 @@ if __name__ == '__main__':
         session.add_all(lups)
         session.commit()
         create_dk_upload(lups, constraint_def.export_order)
-        #clean_files()        
+        clean_files()        
             
     for l in sorted(lups, key=lambda ls: ls.projected, reverse=True):
         print l   

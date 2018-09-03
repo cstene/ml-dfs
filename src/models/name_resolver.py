@@ -8,7 +8,11 @@ RENAMES = {
     'Steven Souza' : 'Steven Souza Jr.',
     'Ronald Acuna' : 'Ronald Acuna Jr.',
     'Gregory Bird' : 'Greg Bird',
-    'Nick Delmonico' : 'Nicky Delmonico'
+    'Nick Delmonico' : 'Nicky Delmonico',
+    'Yulieski Gurriel' : 'Yuli Gurriel',
+    'Jakob Bauers' : 'Jake Bauers',
+    'Jackie Bradley' : 'Jackie Bradley Jr.',
+    'Lourdes Gurriel' : 'Lourdes Gurriel Jr.'
 }
 
 def resolve_name(name):
