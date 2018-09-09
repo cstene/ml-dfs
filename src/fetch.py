@@ -9,10 +9,10 @@ from bs4 import BeautifulSoup
 
 def fetch_rg():
     print('Fetch Rotogrinders')
-    urls = ['https://rotogrinders.com/projected-stats/mlb-hitter.csv?site=draftkings',
-            'https://rotogrinders.com/projected-stats/mlb-pitcher.csv?site=draftkings']
+    league = args.l.upper()
+    urls = c.PROJECTED_URLS[league]
     
-    with open(c.DIRPATHS['projections'] + 'rg_MLB_projection.csv', 'wb') as proj_file:
+    with open(c.DIRPATHS['projections'] + 'rg_{}_projection.csv'.format(league), 'wb') as proj_file:
         proj_writer = csv.writer(proj_file)
         proj_writer.writerow(["playername", "points", "team"])
 

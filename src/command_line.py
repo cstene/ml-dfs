@@ -8,7 +8,8 @@ OPTIMIZE_COMMAND_LINE = [
     ['-y', 'league year', 2018],
     ['-commit', 'commit lineup to db.', False],
     ['-env', 'What environment to save to?', 'dev'],
-    ['-clp', 'Cash line pts for 50/50', 0.0]
+    ['-clp', 'Cash line pts for 50/50', 0.0],
+    ['-upload', 'Produce upload files', False]
     # ['-game', 'game to play', 'draftkings'],
     # ['-w', 'current week', None],
     # ['-season', 'current season', None],

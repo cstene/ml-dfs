@@ -3,6 +3,7 @@ import os.path
 import constants as c
 import datetime
 import models.constraint_defs as constraint_defs
+import models.ignore_player as ip
 
 from command_line import get_args
 from sqlalchemy import create_engine
@@ -64,7 +65,7 @@ def apply_projections(all_players, file_name):
     missing_projections = [
         p for p in all_players if p.projected == 0.0 or p.salary < 1]
     with_projections = [
-        p for p in all_players if p.projected > 0.0 and p.salary > 0]
+        p for p in all_players if p.projected > 0.0 and p.salary > 0 and p.name not in ip.ignore_player_list]
     print('Total Players missing projections: {}'.format(len(missing_projections)))
     print('Total Players with projections: {}'.format(len(with_projections)))
     return with_projections
@@ -242,9 +243,11 @@ if __name__ == '__main__':
     if(args.commit):
         print('Saving LUs.')
         session.add_all(lups)
-        session.commit()
+        session.commit()        
+        clean_files()   
+
+    if(args.upload):
         create_dk_upload(lups, constraint_def.export_order)
-        clean_files()        
             
     for l in sorted(lups, key=lambda ls: ls.projected, reverse=True):
         print l   
