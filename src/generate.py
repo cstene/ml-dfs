@@ -11,6 +11,7 @@ from models.orm import lineup, player, gen_player, Base
 from sqlalchemy.orm import sessionmaker
 from csv_parse import mlb_upload
 from ortools.linear_solver import pywraplp
+from ortools.constraint_solver import pywrapcp, solver_parameters_pb2
 from helper.file_helper import rename_file
 from models.name_resolver import resolve_name
 
@@ -78,51 +79,67 @@ def run_solver(solver, players):
     for p in players:
         variables.append(solver.IntVar(0, 1, p.solver_id()))
 
-    objective = solver.Objective()
-    objective.SetMaximization()
+    #objective = solver.Objective()
+    #objective.SetMaximization()
+    obj_expr = solver.IntVar(0, 3000000, "obj_expr")
+    objective = solver.Maximize(obj_expr, 1)
 
     # optimize on projected points
     for i, p in enumerate(players):
-        objective.SetCoefficient(variables[i], p.projected)
+        solver.Add(obj_expr <= variables[i] * int(p.projected * 1000))
+        #objective.SetCoefficient(variables[i], p.projected)        
 
+    #todo come back to this one.
     # set multi-player constraint
-    multi_caps = {}
-    for i, p in enumerate(players):
-        if not p.multi_position:
-            continue
+    # multi_caps = {}
+    # for i, p in enumerate(players):
+    #     if not p.multi_position:
+    #         continue
 
-        if p.name not in multi_caps:
-            multi_caps[p.name] = solver.Constraint(0, 1)
+    #     if p.name not in multi_caps:
+    #         multi_caps[p.name] = solver.Constraint(0, 1)
 
-        multi_caps[p.name].SetCoefficient(variables[i], 1)
+    #     multi_caps[p.name].SetCoefficient(variables[i], 1)
 
     # set salary cap constraint
-    salary_cap = solver.Constraint(
-        0,
-        50000,
-    )
+    #salary_cap = solver.Constraint(
+    #    0,
+    #    50000,
+    #)
     for i, p in enumerate(players):
-        salary_cap.SetCoefficient(variables[i], p.salary)
+        solver.Add(variables[i] * p.salary <= 50000)
+        #salary_cap.SetCoefficient(variables[i], p.salary)
 
     # set roster size constraint
-    size_cap = solver.Constraint(
-        constraint_def.num_of_players,
-        constraint_def.num_of_players
-    )
+    #size_cap = solver.Constraint(
+    #    constraint_def.num_of_players,
+    #    constraint_def.num_of_players
+    #)
 
     for variable in variables:
-        size_cap.SetCoefficient(variable, 1)
+        solver.Add(variable == constraint_def.num_of_players)
+        #size_cap.SetCoefficient(variable, 1)
 
      # set position limit constraint
     for position, min_limit, max_limit \
             in constraint_def.pos_def:
-        position_cap = solver.Constraint(min_limit, max_limit)
+        #position_cap = solver.Constraint(min_limit, max_limit)
 
         for i, player in enumerate(players):
             if position == player.position:
-                position_cap.SetCoefficient(variables[i], 1)
+                solver.Add(variables[i] >= min_limit)
+                solver.Add(variables[i] <= max_limit)
+                #position_cap.SetCoefficient(variables[i], 1)
 
-    return variables, solver.Solve()
+    decision_builder = solver.Phase(variables, solver.CHOOSE_FIRST_UNBOUND, solver.ASSIGN_MIN_VALUE)
+    collector = solver.LastSolutionCollector()
+    for v in variables:
+        collector.Add(v)
+    collector.AddObjective(obj_expr)    
+
+    variables, solver.Solve(decision_builder, [objective,collector])
+
+    return variable, collector.SolutionCount() - 1
 
 
 def pre_req_check():
@@ -215,10 +232,13 @@ if __name__ == '__main__':
         info = proj_file.split('_')
         source = info[0]
         constraint_def = constraint_defs.set_constraints(info[1])
-        solver = pywraplp.Solver(
-            'FD',
-            pywraplp.Solver.CBC_MIXED_INTEGER_PROGRAMMING
-        )   
+        # solver = pywraplp.Solver(
+        #     'FD',
+        #     pywraplp.Solver.CBC_MIXED_INTEGER_PROGRAMMING
+        # )
+        params = pywrapcp.Solver.DefaultSolverParameters()
+        solver = pywrapcp.Solver('FD', params)
+
         # map to players
         players_with_projections = apply_projections(all_players, proj_file)        
 
