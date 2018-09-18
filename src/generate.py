@@ -4,6 +4,7 @@ import constants as c
 import datetime
 import models.constraint_defs as constraint_defs
 import models.ignore_player as ip
+import models.lock_player as lp
 
 from command_line import get_args
 from sqlalchemy import create_engine
@@ -39,13 +40,14 @@ def apply_projections(all_players, file_name):
     with open(full_file_path, 'rb') as csv_file:
         csv_data = csv.DictReader(csv_file)
         player_not_found = []
+        duplicate_found = []
 
         # hack for weird defensive formatting
         def name_match(row):
             def match_fn(p):
                 if p.position == 'DST':
                     return p.name.strip() in row['playername']
-                return p.name in resolve_name(row['playername'])
+                return p.name in resolve_name(row['playername']) and p.team in row['team']
             return match_fn
 
         for row in csv_data:
@@ -55,12 +57,19 @@ def apply_projections(all_players, file_name):
                 player_not_found.append(row)                
                 continue
 
+            if len(matching_players) > 1:
+                duplicate_found.append(row)                
+                continue
+
             for p in matching_players:
                 p.projected = float(row['points'])
 
     player_not_found.sort(key=lambda pl: pl['team'])
     for pl in player_not_found:
          print('Projection not applied for player {} {}'.format(pl['team'], pl['playername']))
+
+    for dup in duplicate_found:
+        print('Duplicate found for player {} {}'.format(dup['team'], dup['playername']))
 
     missing_projections = [
         p for p in all_players if p.projected == 0.0 or p.salary < 1]
@@ -76,7 +85,10 @@ def run_solver(solver, players):
     variables = []
 
     for p in players:
-        variables.append(solver.IntVar(0, 1, p.solver_id()))
+        if p.name in lp.lock_player_list:
+            variables.append(solver.IntVar(1, 1, p.solver_id()))    
+        else:
+            variables.append(solver.IntVar(0, 1, p.solver_id()))
 
     objective = solver.Objective()
     objective.SetMaximization()

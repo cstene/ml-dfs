@@ -26,7 +26,9 @@ RENAMES = {
     'Juju Smith-Schuster' : 'JuJu Smith-Schuster',
     'Ronald Jones' : 'Ronald Jones II',
     'Robert Kelley' : 'Rob Kelley',
-    'Paul Richardson' : 'Paul Richardson Jr.'
+    'Paul Richardson' : 'Paul Richardson Jr.',
+    'Todd Gurley' : 'Todd Gurley II',
+    'Marvin Jones' : 'Marvin Jones Jr.'
 }
 
 def resolve_name(name):
