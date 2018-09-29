@@ -6,3 +6,4 @@ lab/
 *.db
 *.db-journal
 history/
+data/

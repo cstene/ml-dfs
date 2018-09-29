@@ -4,6 +4,7 @@ import constants as c
 import datetime
 import models.constraint_defs as constraint_defs
 import models.ignore_player as ip
+import models.solver as lu_solver
 
 from command_line import get_args
 from sqlalchemy import create_engine
@@ -76,70 +77,110 @@ def run_solver(solver, players):
     print('Running solver...')
     variables = []
 
+    #Define the variables
     for p in players:
         variables.append(solver.IntVar(0, 1, p.solver_id()))
 
-    #objective = solver.Objective()
-    #objective.SetMaximization()
-    obj_expr = solver.IntVar(0, 3000000, "obj_expr")
-    objective = solver.Maximize(obj_expr, 1)
-
-    # optimize on projected points
-    for i, p in enumerate(players):
-        solver.Add(obj_expr <= variables[i] * int(p.projected * 1000))
-        #objective.SetCoefficient(variables[i], p.projected)        
+    #Define the constraints
 
     #todo come back to this one.
     # set multi-player constraint
     # multi_caps = {}
     # for i, p in enumerate(players):
-    #     if not p.multi_position:
+    #      if not p.multi_position:
     #         continue
 
-    #     if p.name not in multi_caps:
+    #      if p.name not in multi_caps:
     #         multi_caps[p.name] = solver.Constraint(0, 1)
 
-    #     multi_caps[p.name].SetCoefficient(variables[i], 1)
+    #      multi_caps[p.name].SetCoefficient(variables[i], 1)
 
     # set salary cap constraint
     #salary_cap = solver.Constraint(
     #    0,
     #    50000,
     #)
+    salaryConstraint = 0
     for i, p in enumerate(players):
-        solver.Add(variables[i] * p.salary <= 50000)
-        #salary_cap.SetCoefficient(variables[i], p.salary)
-
-    # set roster size constraint
+        salaryConstraint += variables[i] * p.salary
+    solver.Add(salaryConstraint < 50000)    
+        #solver.Add(variables[i] * p.salary < 50000)
+        #solver.Add(1 * variables[i] == 9)
+        #solver.Add(constraints <= 50000)    
+    
+        
+    #set roster size constraint
     #size_cap = solver.Constraint(
-    #    constraint_def.num_of_players,
-    #    constraint_def.num_of_players
+    #   constraint_def.num_of_players,
+    #   constraint_def.num_of_players
     #)
 
+    size_cap = 0 
     for variable in variables:
-        solver.Add(variable == constraint_def.num_of_players)
-        #size_cap.SetCoefficient(variable, 1)
+        size_cap += variable
+    solver.Add(size_cap == constraint_def.num_of_players)
+    #    solver.Add(1 * variable == constraint_def.num_of_players)
+    #    #size_cap.SetCoefficient(variable, 1)
 
-     # set position limit constraint
+    #  # set position limit constraint    
     for position, min_limit, max_limit \
             in constraint_def.pos_def:
-        #position_cap = solver.Constraint(min_limit, max_limit)
+    
+        position_cap = 0
+    #     #position_cap = solver.Constraint(min_limit, max_limit)
 
         for i, player in enumerate(players):
             if position == player.position:
-                solver.Add(variables[i] >= min_limit)
-                solver.Add(variables[i] <= max_limit)
-                #position_cap.SetCoefficient(variables[i], 1)
+                position_cap += variables[i]
+        
+        solver.Add(position_cap >= min_limit)
+        solver.Add(position_cap <= max_limit)
+    #             solver.Add(1 * variables[i] >= min_limit)
+    #             solver.Add(1 * variables[i] <= max_limit)
+    #             #position_cap.SetCoefficient(variables[i], 1)
 
+    #set objective
+    #objective = solver.Objective()
+    #objective.SetMaximization()
+
+    obj_expr = solver.IntVar(50, 50, "obj_expr")
+    objective = solver.Maximize(obj_expr, 1)
+    
+    # optimize on projected points
+    obj = 0
+    for i, p in enumerate(players):
+        obj += variables[i] * int(p.projected * 100)
+        #solver.Add(obj_expr == variables[i] * int(p.projected * 100))    
+        #obj_eq += variables[i] * int(p.projected * 100)
+        
+        #objective.SetCoefficient(variables[i], p.projected)
+    
+    #solver.Add(obj_expr < obj)    
     decision_builder = solver.Phase(variables, solver.CHOOSE_FIRST_UNBOUND, solver.ASSIGN_MIN_VALUE)
-    collector = solver.LastSolutionCollector()
+    #decision_builder = solver.Phase(variables, solver.CHOOSE_LOWEST_MIN, solver.ASSIGN_MIN_VALUE)
+    #decision_builder = solver.Phase(variables, solver.CHOOSE_RANDOM, solver.ASSIGN_RANDOM_VALUE)
+    collector = solver.AllSolutionCollector()
     for v in variables:
         collector.Add(v)
-    collector.AddObjective(obj_expr)    
+    #collector.AddObjective(obj_expr)    
 
-    variables, solver.Solve(decision_builder, [objective,collector])
+    print("Solve the problem")
+    #solver.Solve(decision_builder, [objective,collector])
+    solver.Solve(decision_builder, collector)
 
-    return variable, collector.SolutionCount() - 1
+    print('Solutions found: {}'.format(collector.SolutionCount()))
+
+    if(collector.SolutionCount() > 0):
+        best_solution = collector.SolutionCount() - 1
+        print("Objective value:", collector.ObjectiveValue(best_solution))
+        
+        for v in variables:
+            if(collector.Value(best_solution, v) == 1):
+                print(v)
+     
+    #print('x= ', collector.Value(best_solution, x))
+    #print('y= ', collector.Value(best_solution, y))
+    #return variable, collector.SolutionCount() - 1
 
 
 def pre_req_check():
@@ -243,22 +284,24 @@ if __name__ == '__main__':
         players_with_projections = apply_projections(all_players, proj_file)        
 
         # find optimized solution
-        variables, solution = run_solver(solver, players_with_projections)
+        #variables, solution = run_solver(solver, players_with_projections)
+        s = lu_solver.multi_solver()
+        lups = s.solve(players_with_projections, constraint_def, info, args)
 
-        if solution == solver.OPTIMAL:            
-            print("We have a solution for {} projections".format(source))
-            # need to update index when we have multi solutions per projections, set to 0 for now
-            lu = lineup(info[1],args.y,args.g,source,0,constraint_def.sort_func)
+        # if solution == solver.OPTIMAL:            
+        #     print("We have a solution for {} projections".format(source))
+        #     # need to update index when we have multi solutions per projections, set to 0 for now
+        #     lu = lineup(info[1],args.y,args.g,source,0,constraint_def.sort_func)
 
-            for j, player in enumerate(players_with_projections):
-                if variables[j].solution_value() == 1:                    
-                    lu.players.append(player)
+        #     for j, player in enumerate(players_with_projections):
+        #         if variables[j].solution_value() == 1:                    
+        #             lu.players.append(player)
             
-            lu.run_init_calc()
-            lups.append(lu)
+        #     lu.run_init_calc()
+        #     lups.append(lu)
 
-        else:
-            print("No solution found for {} bro.".format(source))
+        # else:
+        #     print("No solution found for {} bro.".format(source))
     
     if(args.commit):
         print('Saving LUs.')
