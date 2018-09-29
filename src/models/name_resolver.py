@@ -28,11 +28,29 @@ RENAMES = {
     'Robert Kelley' : 'Rob Kelley',
     'Paul Richardson' : 'Paul Richardson Jr.',
     'Todd Gurley' : 'Todd Gurley II',
-    'Marvin Jones' : 'Marvin Jones Jr.'
+    'Marvin Jones' : 'Marvin Jones Jr.',
+    'Ray-Ray McCloud' : 'Ray-Ray McCloud III',
+    'Allen Robinson' : 'Allen Robinson II',
+    'Dwayne Washington' : 'Deandre Washington'
+}
+
+TEAM_NAMES = {
+    'NEP' : 'NE',
+    'NOS' : 'NO',
+    'JAC' : 'JAX',
+    'GBP' : 'GB',
+    'SFO' : 'SF',
+    'TBB' : 'TB',
+    'KCC' : 'KC'
 }
 
 def resolve_name(name):
     if name in RENAMES:
         return RENAMES[name]
+    return name
+
+def resolve_team(name):
+    if name in TEAM_NAMES:
+        return TEAM_NAMES[name]
     return name
 

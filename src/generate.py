@@ -13,7 +13,7 @@ from sqlalchemy.orm import sessionmaker
 from csv_parse import mlb_upload
 from ortools.linear_solver import pywraplp
 from helper.file_helper import rename_file
-from models.name_resolver import resolve_name
+from models.name_resolver import resolve_name, resolve_team
 
 args = None
 engine = None
@@ -47,13 +47,13 @@ def apply_projections(all_players, file_name):
             def match_fn(p):
                 if p.position == 'DST':
                     return p.name.strip() in row['playername']
-                return p.name in resolve_name(row['playername']) and p.team in row['team']
+                return p.name in resolve_name(row['playername']) and p.team == resolve_team(row['team'])
             return match_fn
 
         for row in csv_data:
             matching_players = filter(name_match(row), all_players)
 
-            if len(matching_players) == 0:
+            if len(matching_players) == 0 and resolve_team(row['team']) in (o.team for o in all_players):
                 player_not_found.append(row)                
                 continue
 
