@@ -286,7 +286,12 @@ if __name__ == '__main__':
         # find optimized solution
         #variables, solution = run_solver(solver, players_with_projections)
         s = lu_solver.multi_solver()
-        lups = s.solve(players_with_projections, constraint_def, info, args)
+
+        try:
+            lups = s.solve(players_with_projections, constraint_def, info, args)
+        except:
+            print('something is wrong')
+        
 
         # if solution == solver.OPTIMAL:            
         #     print("We have a solution for {} projections".format(source))
