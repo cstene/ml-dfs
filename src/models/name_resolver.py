@@ -31,7 +31,9 @@ RENAMES = {
     'Marvin Jones' : 'Marvin Jones Jr.',
     'Ray-Ray McCloud' : 'Ray-Ray McCloud III',
     'Allen Robinson' : 'Allen Robinson II',
-    'Dwayne Washington' : 'Deandre Washington'
+    'Dwayne Washington' : 'Deandre Washington',
+    'Sammie Coates' : 'Sammie Coates Jr.',
+    'Khadarel Hodge' : 'KhaDarel Hodge'
 }
 
 TEAM_NAMES = {
