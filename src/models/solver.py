@@ -41,8 +41,9 @@ class multi_solver():
                 self.solver.Add(position_size[pos] >= min_limit)
                 self.solver.Add(position_size[pos] <= max_limit)
 
-        #Set objective expression
-        score = 145 * 100
+        #Set object
+        # ive expression
+        score = 123 * 100
         obj_expr = self.solver.IntVar(score, score, "obj_expr")
         self.solver.Add(obj_expr <= projected)
         collector.AddObjective(obj_expr)
