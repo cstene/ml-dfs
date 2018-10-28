@@ -285,7 +285,8 @@ if __name__ == '__main__':
 
         # find optimized solution
         #variables, solution = run_solver(solver, players_with_projections)
-        s = lu_solver.multi_solver()
+        #s = lu_solver.multi_solver()
+        s = lu_solver.multi_solver_v_2()
 
         try:
             lups = s.solve(players_with_projections, constraint_def, info, args)

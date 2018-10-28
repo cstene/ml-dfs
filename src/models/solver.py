@@ -1,5 +1,6 @@
 from ortools.linear_solver import pywraplp
 from ortools.constraint_solver import pywrapcp, solver_parameters_pb2
+from ortools.sat.python import cp_model
 from orm import lineup
 
 class multi_solver():
@@ -12,7 +13,7 @@ class multi_solver():
         variables = []
         collector = self.solver.AllSolutionCollector()
         #collector = self.solver.LastSolutionCollector()
-        lu_count = 10
+        lu_count = 2
 
         print('Running multi lineup solver...')
         #Define variables and constraints
@@ -43,10 +44,10 @@ class multi_solver():
 
         #Set object
         # ive expression
-        score = 123 * 100
+        score = 120 * 100
         obj_expr = self.solver.IntVar(score, score, "obj_expr")
-        self.solver.Add(obj_expr <= projected)
-        collector.AddObjective(obj_expr)
+        #self.solver.Add(obj_expr >= projected)
+        #collector.AddObjective(obj_expr)
         
         #Create solution collector
         decision_builder = self.solver.Phase(variables, self.solver.CHOOSE_FIRST_UNBOUND, self.solver.ASSIGN_MIN_VALUE)
@@ -76,6 +77,78 @@ class multi_solver():
                 solution_index -= 1        
             return lups
         
-        return []
-        
+        return []    
 
+class multi_solver_v_2(): 
+    model = {}
+
+    def __init__(self):
+        self.model = cp_model.CpModel()
+
+    def solve(self, players, constraint_defs, proj_file_info, args):
+        print('Running multi lineup solver v2...')
+        variables = []
+        lu_count = 2
+
+        #Define variables and constraints
+        salary = 0
+        roster_size = 0
+        position_size = {}
+        projected = 0
+        for i, p in enumerate(players):
+            var = self.model.NewIntVar(0, 1, p.solver_id())
+            salary += var * p.salary
+            roster_size += var
+            #Need to multiple by 100 so we are working with integers.
+            projected += var * int(p.projected * 100)
+            
+            if not position_size.has_key(p.position):
+                position_size[p.position] = 0
+            position_size[p.position] += var
+
+            variables.append(var)
+
+        self.model.Add(salary < 50000)
+        self.model.Add(roster_size == constraint_defs.num_of_players)
+        for pos, min_limit, max_limit \
+            in constraint_defs.pos_def:
+                self.model.Add(position_size[pos] >= min_limit)
+                self.model.Add(position_size[pos] <= max_limit)
+
+        self.model.Add(projected >= (100 * 100))
+
+        solver = cp_model.CpSolver()
+        solution_printer = SolutionPrinter(variables, constraint_defs, proj_file_info, args, players)
+        status = solver.SearchForAllSolutions(self.model, solution_printer)
+
+        print("what? {0}".format(status))
+        print(solution_printer.SolutionCount())
+        return solution_printer.lups[:5]
+
+class SolutionPrinter(cp_model.CpSolverSolutionCallback):
+    lups = []
+
+    def __init__(self, variables, constraint_defs, proj_file_info, args, players):
+        cp_model.CpSolverSolutionCallback.__init__(self)
+        self.__variables = variables
+        self.__solution_count = 0
+        self.constraint_defs = constraint_defs
+        self.proj_file_info = proj_file_info
+        self.args = args
+        self.players = players
+
+    def OnSolutionCallback(self):
+        self.__solution_count += 1
+
+        lu = lineup(self.proj_file_info[1],self.args.y,self.args.g,self.proj_file_info[0],0,self.constraint_defs.sort_func)
+
+        for j, p in enumerate(self.players):
+            if(self.Value(self.__variables[j]) == 1):
+                    lu.players.append(p)
+                
+        lu.run_init_calc()
+        self.lups.append(lu)
+
+    def SolutionCount(self):
+        return self.__solution_count
+        
