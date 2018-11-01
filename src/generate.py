@@ -5,6 +5,8 @@ import datetime
 import models.constraint_defs as constraint_defs
 import models.ignore_player as ip
 import models.lock_player as lp
+import models.solver as lu_solver
+
 
 from command_line import get_args
 from sqlalchemy import create_engine
@@ -12,6 +14,7 @@ from models.orm import lineup, player, gen_player, Base
 from sqlalchemy.orm import sessionmaker
 from csv_parse import mlb_upload
 from ortools.linear_solver import pywraplp
+from ortools.constraint_solver import pywrapcp, solver_parameters_pb2
 from helper.file_helper import rename_file
 from models.name_resolver import resolve_name, resolve_team
 
@@ -78,64 +81,6 @@ def apply_projections(all_players, file_name):
     print('Total Players missing projections: {}'.format(len(missing_projections)))
     print('Total Players with projections: {}'.format(len(with_projections)))
     return with_projections
-
-
-def run_solver(solver, players):
-    print('Running solver...')
-    variables = []
-
-    for p in players:
-        if p.name in lp.lock_player_list:
-            variables.append(solver.IntVar(1, 1, p.solver_id()))    
-        else:
-            variables.append(solver.IntVar(0, 1, p.solver_id()))
-
-    objective = solver.Objective()
-    objective.SetMaximization()
-
-    # optimize on projected points
-    for i, p in enumerate(players):
-        objective.SetCoefficient(variables[i], p.projected)
-
-    # set multi-player constraint
-    multi_caps = {}
-    for i, p in enumerate(players):
-        if not p.multi_position:
-            continue
-
-        if p.name not in multi_caps:
-            multi_caps[p.name] = solver.Constraint(0, 1)
-
-        multi_caps[p.name].SetCoefficient(variables[i], 1)
-
-    # set salary cap constraint
-    salary_cap = solver.Constraint(
-        0,
-        50000,
-    )
-    for i, p in enumerate(players):
-        salary_cap.SetCoefficient(variables[i], p.salary)
-
-    # set roster size constraint
-    size_cap = solver.Constraint(
-        constraint_def.num_of_players,
-        constraint_def.num_of_players
-    )
-
-    for variable in variables:
-        size_cap.SetCoefficient(variable, 1)
-
-     # set position limit constraint
-    for position, min_limit, max_limit \
-            in constraint_def.pos_def:
-        position_cap = solver.Constraint(min_limit, max_limit)
-
-        for i, player in enumerate(players):
-            if position == player.position:
-                position_cap.SetCoefficient(variables[i], 1)
-
-    return variables, solver.Solve()
-
 
 def pre_req_check():
     print('Check pre reqs...')
@@ -218,7 +163,6 @@ if __name__ == '__main__':
     else:
         print('Nothing will be saved to database. Files will not be cleaned up.')
 
-
     all_players = retrieve_players_with_salaries()
 
     lups = []
@@ -227,30 +171,15 @@ if __name__ == '__main__':
         info = proj_file.split('_')
         source = info[0]
         constraint_def = constraint_defs.set_constraints(info[1])
-        solver = pywraplp.Solver(
-            'FD',
-            pywraplp.Solver.CBC_MIXED_INTEGER_PROGRAMMING
-        )   
+
         # map to players
-        players_with_projections = apply_projections(all_players, proj_file)        
+        players_with_projections = apply_projections(all_players, proj_file)                
 
-        # find optimized solution
-        variables, solution = run_solver(solver, players_with_projections)
-
-        if solution == solver.OPTIMAL:            
-            print("We have a solution for {} projections".format(source))
-            # need to update index when we have multi solutions per projections, set to 0 for now
-            lu = lineup(info[1],args.y,args.g,source,0,constraint_def.sort_func)
-
-            for j, player in enumerate(players_with_projections):
-                if variables[j].solution_value() == 1:                    
-                    lu.players.append(player)
-            
-            lu.run_init_calc()
-            lups.append(lu)
-
-        else:
-            print("No solution found for {} bro.".format(source))
+        try:
+            s = lu_solver.multi_solver_v_2()
+            lups = s.solve(players_with_projections, constraint_def, info, args)
+        except Exception, e:
+            print('something is wrong: {0}'.format(str(e)))
     
     if(args.commit):
         print('Saving LUs.')
