@@ -290,8 +290,8 @@ if __name__ == '__main__':
 
         try:
             lups = s.solve(players_with_projections, constraint_def, info, args)
-        except:
-            print('something is wrong')
+        except Exception, e:
+            print('something is wrong: {0}'.format(str(e)))
         
 
         # if solution == solver.OPTIMAL:            

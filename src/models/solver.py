@@ -83,12 +83,12 @@ class multi_solver_v_2():
     model = {}
 
     def __init__(self):
-        self.model = cp_model.CpModel()        
+        self.model = cp_model.CpModel()
 
     def solve(self, players, constraint_defs, proj_file_info, args):
         print('Running multi lineup solver v2...')        
         variables = []
-        lu_count = 2
+        lu_count = int(args.gpp)
 
         #Define variables and constraints
         salary = 0
@@ -116,23 +116,40 @@ class multi_solver_v_2():
                 self.model.Add(position_size[pos] >= min_limit)
                 self.model.Add(position_size[pos] <= max_limit)
 
-        self.model.Add(projected >= int(124 * 100))
-        #self.model.Maximize(projected)        
         solver = cp_model.CpSolver()
-        solution_printer = SolutionPrinter(variables, constraint_defs, proj_file_info, args, players)
+        if(args.gpp > 0):
+            self.model.Add(projected >= int(124 * 100))            
+            solution_printer = SolutionPrinter(variables, constraint_defs, proj_file_info, args, players)
+            status = solver.SearchForAllSolutions(self.model, solution_printer)
+            print("Status: {0}".format(solver.StatusName(status)))        
+            print("Count: {0}".format(solution_printer.SolutionCount()))
+            solution_printer.lups.sort(key=lambda x: x.projected, reverse=True)
+            return solution_printer.lups[:lu_count]
+
+        #We want optimal lu.
+        self.model.Maximize(projected)        
+        status = solver.Solve(self.model)
+        print("Status: {0}".format(solver.StatusName(status)))
+
+        if(status == cp_model.OPTIMAL):
+            lu = lineup(proj_file_info[1],args.y,args.g,proj_file_info[0],0,constraint_defs.sort_func)
+            for j, p in enumerate(players):
+                if(solver.Value(variables[j]) == 1):
+                        lu.players.append(p)
+            
+            lu.run_init_calc()
+            return [lu]
+        
         #solution_printer = VarArraySolutionPrinter(variables)
         #status = cp_model.OPTIMAL
-        status = solver.SearchForAllSolutions(self.model, solution_printer)
+        
         #status = solver.Solve(self.model)
 
         # if(status == cp_model.OPTIMAL):
         #     print("total: {0}".format(solver.ObjectiveValue()/100))
         # for v in variables:
         #     print(solver.Value(v))
-        print("Status: {0}".format(solver.StatusName(status)))        
-        print("Count: {0}".format(solution_printer.SolutionCount()))
-        solution_printer.lups.sort(key=lambda x: x.projected, reverse=True)
-        return solution_printer.lups[:lu_count]
+        
 
 class SolutionPrinter(cp_model.CpSolverSolutionCallback):
     lups = []

@@ -9,7 +9,8 @@ OPTIMIZE_COMMAND_LINE = [
     ['-commit', 'commit lineup to db.', False],
     ['-env', 'What environment to save to?', 'dev'],
     ['-clp', 'Cash line pts for 50/50', 0.0],
-    ['-upload', 'Produce upload files', False]
+    ['-upload', 'Produce upload files', False],
+    ['-gpp', 'Generates gpp lineups. If 0 generates optimal lu.', 0]
     # ['-game', 'game to play', 'draftkings'],
     # ['-w', 'current week', None],
     # ['-season', 'current season', None],
