@@ -10,7 +10,7 @@ import models.solver as lu_solver
 
 from command_line import get_args
 from sqlalchemy import create_engine
-from models.orm import lineup, player, gen_player, Base
+from models.orm import lineup, player, gen_player, Base, proj_player
 from sqlalchemy.orm import sessionmaker
 from csv_parse import mlb_upload
 from ortools.linear_solver import pywraplp
@@ -34,7 +34,6 @@ def retrieve_players_with_salaries():
 
     print('Player count: {}'.format(len(all_players)))
     return all_players
-
 
 def apply_projections(all_players, file_name):
     print('Apply projections from file {}'.format(file_name))
@@ -97,7 +96,6 @@ def pre_req_check():
                  -l is {} -y is {}'''.format(args.l, args.y)
         raise Exception(msg)
 
-
 def init_db():
     global engine
     global session
@@ -106,14 +104,12 @@ def init_db():
     Session = sessionmaker(bind=engine)
     session = Session()
 
-
 def clean_lineups():
     current_lus = session.query(lineup).filter_by(
         league=args.l, league_year=args.y, league_game=int(args.g))
     for cl in current_lus:
         session.delete(cl)
     session.commit()
-
 
 def clean_files():
     print('Moving salaries and projections to history.')
@@ -135,7 +131,6 @@ def clean_files():
         rename_file(c.DIRPATHS['projections'] +
                     file_name, proj_path + file_name)
 
-
 def create_dk_upload(lups, pos_order):
     print('Create lu_upload for DK.')
     with open(c.FILEPATHS['lu_upload'], 'wb') as lu_upload:
@@ -148,6 +143,28 @@ def create_dk_upload(lups, pos_order):
                 p.player_id for p in sorted_players
             ])
 
+def create_gpp_projection(lu, source):
+    print('Building GPP list.')
+    player_list = []
+    add_list = []
+    gpp_file = c.DIRPATHS['proj-gpp'] + c.FILEPATHS['gpp-file'].format(source, args.l, args.g)  
+    with open(gpp_file, 'ab+') as gpp_csv:
+        csv_data = csv.DictReader(gpp_csv)
+        
+        header = ['playername', 'projection', 'team', 'percentage']
+        
+        for row in csv_data:
+            player_list.append(proj_player(row['playername'], float(row['projection']), row['team'], int(row['percentage'])))
+
+        writer = csv.writer(gpp_csv)
+        if gpp_csv.tell() == 0:        
+            writer.writerow(header)
+        
+        for lup in lu.players:
+            if not any(p.playername == lup.name and p.team == lup.team for p in player_list):                
+                writer.writerow([lup.name, lup.projected, lup.team, 60])       
+        
+        
 if __name__ == '__main__':
     args = get_args()  
 
@@ -177,16 +194,19 @@ if __name__ == '__main__':
 
         try:
             s = lu_solver.multi_solver_v_2()
-            lups = s.solve(players_with_projections, constraint_def, info, args)
+            lups.extend(s.solve(players_with_projections, constraint_def, info, args))
         except Exception, e:
-            print('something is wrong: {0}'.format(str(e)))
+            print('Lineup solver failed: {0}'.format(str(e)))
     
     if(args.commit):
         print('Saving LUs.')
         session.add_all(lups)
         session.commit()        
-        clean_files()   
+        clean_files()
 
+    if(args.gpp == 0):   
+        create_gpp_projection(lups[0], source)
+        
     if(args.upload):
         create_dk_upload(lups, constraint_def.export_order)
             

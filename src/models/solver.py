@@ -90,13 +90,14 @@ class multi_solver_v_2():
         variables = []
         lu_count = int(args.gpp)
 
-        #Define variables and constraints
+        #Define variables for contraints
         salary = 0
         roster_size = 0
         position_size = {}
         projected = 0       
         
         for i, p in enumerate(players):
+            #create variables and coefficients
             var = self.model.NewIntVar(0, 1, p.solver_id())                    
             salary += var * p.salary
             roster_size += var
@@ -109,6 +110,7 @@ class multi_solver_v_2():
 
             variables.append(var)
         
+        #Add constraints to model.
         self.model.Add(salary < 50000)
         self.model.Add(roster_size == constraint_defs.num_of_players)
         for pos, min_limit, max_limit \
@@ -118,7 +120,8 @@ class multi_solver_v_2():
 
         solver = cp_model.CpSolver()
         if(args.gpp > 0):
-            self.model.Add(projected >= int(124 * 100))            
+            print("Solving GPP")
+            self.model.Add(projected >= int(150 * 100))            
             solution_printer = SolutionPrinter(variables, constraint_defs, proj_file_info, args, players)
             status = solver.SearchForAllSolutions(self.model, solution_printer)
             print("Status: {0}".format(solver.StatusName(status)))        
@@ -127,6 +130,7 @@ class multi_solver_v_2():
             return solution_printer.lups[:lu_count]
 
         #We want optimal lu.
+        print("Solving Optimal")
         self.model.Maximize(projected)        
         status = solver.Solve(self.model)
         print("Status: {0}".format(solver.StatusName(status)))
@@ -156,6 +160,7 @@ class SolutionPrinter(cp_model.CpSolverSolutionCallback):
 
     def OnSolutionCallback(self):        
         self.__solution_count += 1
+        #print(self.__solution_count)
 
         lu = lineup(self.proj_file_info[1],self.args.y,self.args.g,self.proj_file_info[0],0,self.constraint_defs.sort_func)
 

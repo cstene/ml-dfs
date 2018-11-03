@@ -167,6 +167,22 @@ class player(Base):
     def get_value(self):
         return round(self.projected / self.salary * 1000.0, 2)
 
+    def to_proj_player(self, percentage):
+        return proj_player(self.name, self.projected, self.team, percentage)
+
+class proj_player():
+    def __init__(self, 
+        name,
+        projection,
+        team,
+        percentage=100
+    ):
+        self.playername = name
+        self.projection = projection
+        self.team = team
+        self.percentage = percentage
+
+
 
 def gen_player(pos, row):
     return player(
@@ -181,3 +197,5 @@ def gen_player(pos, row):
         # average_score=avg,
         #lock=(args.locked and row[name_key] in args.locked)
     )
+
+

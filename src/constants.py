@@ -5,12 +5,13 @@ FILEPATHS = {
     'salaries' : base_path + "/data/current-salaries.csv",
     'lu_upload' : base_path + "/data/lu_upload.csv",
     'results' : base_path + "/data/results.csv",
-    
+    'gpp-file': '{}_{}_{}_gpp_proj.csv'
 }
 
 DIRPATHS = {
     'projections' : base_path + "/data/projections/",
-    'history' : base_path + "/history/"
+    'history' : base_path + "/history/",
+    'proj-gpp' : base_path + "/data/proj-gpp/"
 }
 
 DB = {
