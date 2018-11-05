@@ -1,6 +1,7 @@
 from ortools.linear_solver import pywraplp
 from ortools.constraint_solver import pywrapcp, solver_parameters_pb2
 from ortools.sat.python import cp_model
+import lock_player as lp
 from orm import lineup
 
 class multi_solver():
@@ -22,7 +23,11 @@ class multi_solver():
         position_size = {}
         projected = 0
         for i, p in enumerate(players):
-            var = self.solver.IntVar(0, 1, p.solver_id())
+            if(p.name in lp.lock_player_list):
+                var = self.solver.IntVar(1, 1, p.solver_id())
+            else:
+                var = self.solver.IntVar(0, 1, p.solver_id())
+
             salary += var * p.salary
             roster_size += var
             #Need to multiple by 100 so we are working with integers.
@@ -98,7 +103,11 @@ class multi_solver_v_2():
         
         for i, p in enumerate(players):
             #create variables and coefficients
-            var = self.model.NewIntVar(0, 1, p.solver_id())                    
+            if(p.name in lp.lock_player_list):
+                var = self.model.NewIntVar(1, 1, p.solver_id())
+            else:
+                var = self.model.NewIntVar(0, 1, p.solver_id())
+                              
             salary += var * p.salary
             roster_size += var
             #Need to multiple by 100 so we are working with integers.

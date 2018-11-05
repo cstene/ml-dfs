@@ -4,7 +4,7 @@ import constants as c
 import datetime
 import models.constraint_defs as constraint_defs
 import models.ignore_player as ip
-import models.lock_player as lp
+
 import models.solver as lu_solver
 
 
