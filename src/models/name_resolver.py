@@ -33,7 +33,8 @@ RENAMES = {
     'Allen Robinson' : 'Allen Robinson II',
     'Dwayne Washington' : 'Deandre Washington',
     'Sammie Coates' : 'Sammie Coates Jr.',
-    'Khadarel Hodge' : 'KhaDarel Hodge'
+    'Khadarel Hodge' : 'KhaDarel Hodge',
+    'Rashad Greene' : 'Rashad Greene Sr.'
 }
 
 TEAM_NAMES = {

@@ -1,9 +1,12 @@
 ignore_player_list = [
-    'Kenyan Drake',
-    'Peyton Barber',
-    'Isaiah Crowell',
-    'Patrick Mahomes',
-    'Tevin Coleman',
-    'Michael Thomas',
-    'Todd Gurley II'
+    # 'Jordy Nelson',
+    # 'Corey Davis',
+    # 'Tyrell Williams',
+    # 'Mike Williams'
+    # 'Michael Thomas'
+    # 'Tevin Coleman',
+    # 'Peyton Barber',
+    # 'Michael Thomas',
+    # 'Mike Williams',
+    # 'Kenyan Drake'
 ]

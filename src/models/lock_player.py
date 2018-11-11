@@ -1,10 +1,18 @@
 lock_player_list = [
-    'O.J. Howard',
-    'Jared Goff',
+    'Ryan Fitzpatrick',
     'Kareem Hunt',
-    'Seahawks ',
-    'Alvin Kamara',
-    'Devin Funchess',
-    'Cooper Kupp',
-    'Brandin Cooks'
+    'Todd Gurley II',
+    #'David Johnson',
+    'Chris Godwin',
+    'John Ross',
+    #'Buccaneers ',
+    #'Jack Doyle',
+    #'Jordan Howard',
+    #'Jordan Reed'
+    #'David Johnson',
+    #'Jared Goff',
+    #'Philip Rivers',
+    #'Jets ',
+    #'Keenan Allen',
+    'Melvin Gordon III'
 ]
