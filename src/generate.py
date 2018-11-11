@@ -38,7 +38,8 @@ def retrieve_players_with_salaries():
 def apply_projections(all_players, file_name):
     print('Apply projections from file {}'.format(file_name))
 
-    full_file_path = c.DIRPATHS['projections'] + file_name
+    proj_dir = c.DIRPATHS['proj-gpp'] if args.gpp > 0 else c.DIRPATHS['projections']
+    full_file_path = proj_dir + file_name
     with open(full_file_path, 'rb') as csv_file:
         csv_data = csv.DictReader(csv_file)
         player_not_found = []
@@ -65,7 +66,10 @@ def apply_projections(all_players, file_name):
 
             for p in matching_players:
                 p.projected = float(row['points'])
+                p.gpp_percent = int(row['percentage']) if 'percentage' in row.keys() else 0
+                
 
+                
     player_not_found.sort(key=lambda pl: pl['team'])
     for pl in player_not_found:
          print('Projection not applied for player {} {}'.format(pl['team'], pl['playername']))
@@ -151,10 +155,10 @@ def create_gpp_projection(lu, source):
     with open(gpp_file, 'ab+') as gpp_csv:
         csv_data = csv.DictReader(gpp_csv)
         
-        header = ['playername', 'projection', 'team', 'percentage']
+        header = ['playername', 'points', 'team', 'percentage']
         
         for row in csv_data:
-            player_list.append(proj_player(row['playername'], float(row['projection']), row['team'], int(row['percentage'])))
+            player_list.append(proj_player(row['playername'], float(row['points']), row['team'], float(row['percentage'])))
 
         writer = csv.writer(gpp_csv)
         if gpp_csv.tell() == 0:        
@@ -184,7 +188,8 @@ if __name__ == '__main__':
 
     lups = []
     constraint_def = None
-    for i, proj_file in enumerate(os.listdir(c.DIRPATHS['projections'])):        
+    proj_dir = c.DIRPATHS['proj-gpp'] if args.gpp > 0 else c.DIRPATHS['projections']
+    for i, proj_file in enumerate(os.listdir(proj_dir)):
         info = proj_file.split('_')
         source = info[0]
         constraint_def = constraint_defs.set_constraints(info[1])
@@ -212,6 +217,8 @@ if __name__ == '__main__':
             
     for l in sorted(lups, key=lambda ls: ls.projected, reverse=True):
         print l   
+
+    
 
 print('Complete.')
 

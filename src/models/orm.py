@@ -147,7 +147,9 @@ class player(Base):
         possible_positions=None,
         multi_position=False,
         matchup=None,
-        player_id=0
+        player_id=0,
+        gpp_percent=60.0,
+        gpp_usage=0
         #average_score, lock
     ):
         self.name = name
@@ -160,6 +162,8 @@ class player(Base):
         self.multi_position = multi_position
         self.matchup = matchup
         self.player_id = player_id
+        self.gpp_percent = gpp_percent
+        self.gpp_usage = gpp_usage
 
     def solver_id(self):
         return '{} {} {}'.format(self.name, self.position, self.team)

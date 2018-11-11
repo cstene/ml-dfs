@@ -130,7 +130,7 @@ class multi_solver_v_2():
         solver = cp_model.CpSolver()
         if(args.gpp > 0):
             print("Solving GPP")
-            self.model.Add(projected >= int(150 * 100))            
+            self.model.Add(projected >= int(130 * 100))            
             solution_printer = SolutionPrinter(variables, constraint_defs, proj_file_info, args, players)
             status = solver.SearchForAllSolutions(self.model, solution_printer)
             print("Status: {0}".format(solver.StatusName(status)))        
