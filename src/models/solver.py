@@ -120,7 +120,7 @@ class multi_solver_v_2():
             variables.append(var)
         
         #Add constraints to model.
-        self.model.Add(salary < 50000)
+        self.model.Add(salary <= 50000)
         self.model.Add(roster_size == constraint_defs.num_of_players)
         for pos, min_limit, max_limit \
             in constraint_defs.pos_def:
